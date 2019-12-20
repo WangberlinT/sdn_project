@@ -119,5 +119,6 @@ class TopoManager():
 
     def addARPTable(self,host):
         iplist = host.get_ips()
+        macobj = host.get_mac()
         for i in range(0,len(iplist)):
-            self.ARPTable[iplist[i]] = host.get_mac
+            self.ARPTable[iplist[i]] = macobj

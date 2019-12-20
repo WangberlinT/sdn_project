@@ -147,12 +147,11 @@ class ShortestPathSwitching(app_manager.RyuApp):
                 # TODO:  Generate a *REPLY* for this request based on your switch state
                 ask_ip = arp_msg.src_ip
                 ask_mac = arp_msg.src_mac
-                print("asker_mac: %s",ask_mac)
                 repl_ip = arp_msg.dst_ip
-                repl_mac =int(self. tm.ARPTable[repl_ip],10)
+                repl_mac =self. tm.ARPTable[repl_ip]
                 # Here is an example way to send an ARP packet using the ofctl utilities
-                # ofctl.send_arp(arp_opcode=arp.ARP_REPLY,vlan_id=VLANID_NONE,dst_mac=ask_mac,sender_mac=repl_mac,sender_ip=repl_ip,
-                #               target_mac=ask_mac, target_ip=ask_ip, src_port=ofctl.dp.ofproto.OFPP_CONTROLLER,output_port=in_port
-                #               )
+                ofctl.send_arp(arp_opcode=arp.ARP_REPLY,vlan_id=VLANID_NONE,dst_mac=ask_mac,sender_mac=repl_mac,sender_ip=repl_ip,
+                              target_mac=ask_mac, target_ip=ask_ip, src_port=ofctl.dp.ofproto.OFPP_CONTROLLER,output_port=in_port
+                              )
                 print("send reply!")
 
