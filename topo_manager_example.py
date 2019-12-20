@@ -11,7 +11,6 @@ change its structure, or replace it entirely.
 
 from ryu.topology.switches import Port, Switch, Link
 
-
 class Device():
     """Base class to represent an device in the network.
 
@@ -96,6 +95,7 @@ class TopoManager():
     def __init__(self):
         # TODO:  Initialize some data structures
         self.all_devices = []
+        self.ARPTable = {}; # store the ip address : Mac address pair
         pass
 
     def add_switch(self, sw):
@@ -111,7 +111,13 @@ class TopoManager():
         host = TMHost(name, h)
 
         self.all_devices.append(host)
-
+        self.addARPTable(host)
         # TODO:  Add host to some data structure(s)
-
+        # test
+        # print('ARPTable: %s{}',self.ARPTable,format("(ip:%s,mac:%s) be added into arp table",host.get_ips(),host.get_mac()));
     # . . .
+
+    def addARPTable(self,host):
+        iplist = host.get_ips()
+        for i in range(0,len(iplist)):
+            self.ARPTable[iplist[i]] = host.get_mac

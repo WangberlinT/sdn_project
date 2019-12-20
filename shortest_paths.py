@@ -133,21 +133,26 @@ class ShortestPathSwitching(app_manager.RyuApp):
         ofctl = OfCtl.factory(dp, self.logger)
 
         in_port = msg.in_port
-        pkt = packet.Packet(msg.data)
-        eth = pkt.get_protocols(ethernet.ethernet)[0]
+        pkt = packet.Packet(msg.data)# resolve packet out
+        eth = pkt.get_protocols(ethernet.ethernet)[0]# get link layer protocal
 
         if eth.ethertype == ether_types.ETH_TYPE_ARP:
-            arp_msg = pkt.get_protocols(arp.arp)[0]
+            arp_msg = pkt.get_protocols(arp.arp)[0]# resolve package as arp msg
 
-            if arp_msg.opcode == arp.ARP_REQUEST:
+            if arp_msg.opcode == arp.ARP_REQUEST: # if it is a request option
 
                 self.logger.warning("Received ARP REQUEST on switch%d/%d:  Who has %s?  Tell %s",
                                     dp.id, in_port, arp_msg.dst_ip, arp_msg.src_mac)
 
                 # TODO:  Generate a *REPLY* for this request based on your switch state
-
+                ask_ip = arp_msg.src_ip
+                ask_mac = arp_msg.src_mac
+                print("asker_mac: %s",ask_mac)
+                repl_ip = arp_msg.dst_ip
+                repl_mac =int(self. tm.ARPTable[repl_ip],10)
                 # Here is an example way to send an ARP packet using the ofctl utilities
-                #ofctl.send_arp(vlan_id=VLANID_NONE,
-                #               src_port=ofctl.dp.ofproto.OFPP_CONTROLLER,
-                #               . . .)
+                # ofctl.send_arp(arp_opcode=arp.ARP_REPLY,vlan_id=VLANID_NONE,dst_mac=ask_mac,sender_mac=repl_mac,sender_ip=repl_ip,
+                #               target_mac=ask_mac, target_ip=ask_ip, src_port=ofctl.dp.ofproto.OFPP_CONTROLLER,output_port=in_port
+                #               )
+                print("send reply!")
 
