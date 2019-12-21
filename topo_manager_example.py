@@ -123,11 +123,11 @@ class TopoManager():
         # test
         # print('ARPTable: %s{}',self.ARPTable,format("(ip:%s,mac:%s) be added into arp table",host.get_ips(),host.get_mac()));
     # . . .
-    def find_switch_by_id(self,dpid):
+    def find_switch_by_port(self,port):
         for device in self.all_devices:
             if isinstance(device,TMSwitch):
-                device.get_dpid() == dpid
-                return device
+                 if port in device.get_ports():
+                    return device
 
     def addARPTable(self,host):
         iplist = host.get_ips()

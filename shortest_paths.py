@@ -48,7 +48,7 @@ class ShortestPathSwitching(app_manager.RyuApp):
                                     dl_vlan=VLANID_NONE,
                                     dl_dst=dl_dst,
                                     actions=actions)
-        print('forwarding_rule:\ndatapath: %s\ndl_dst: %s\nport: %s'%(datapath,dl_dst,port))
+        print('forwarding_rule:\ndl_dst: %s\nport: %s'%(dl_dst,port))
         
 
     @set_ev_cls(event.EventSwitchEnter)
@@ -69,7 +69,12 @@ class ShortestPathSwitching(app_manager.RyuApp):
         # test
         # self.add_forwarding_rule(switch.dp,'00:00:00:00:00:01',1)
         # self.add_forwarding_rule(switch.dp,'00:00:00:00:00:02',2)
-        # ---------------------------------------------------------------------------
+        print("shoudong: %s"%(switch.dp))
+        # --------------------------------------------------------------------------- 
+        # for device in self.tm.all_devices:
+        #     if isinstance(device,TMHost):
+        #         self.bfsUpdate(device)
+
 
 
     @set_ev_cls(event.EventSwitchLeave)
@@ -97,7 +102,7 @@ class ShortestPathSwitching(app_manager.RyuApp):
                          host.port.dpid, host.port.port_no, host.port.hw_addr)
 
         # TODO:  Update network topology
-        tm_switch = self.tm.find_switch_by_id(host.port.dpid)
+        tm_switch = self.tm.find_switch_by_port(host.port)
         print(tm_switch)
         h_name = "host_{}".format(host.mac)
         tm_host = TMHost(h_name, host)
@@ -116,7 +121,6 @@ class ShortestPathSwitching(app_manager.RyuApp):
         dst_mac = host.get_mac()
         while(not q.empty()):
             device = q.get()
-            q.qsize()
             for n in device.get_neighbors():
                 if n in visited:
                     break
@@ -127,7 +131,9 @@ class ShortestPathSwitching(app_manager.RyuApp):
                         h_mac = device.get_mac()
                         s_port = n.get_link_port(h_mac)
                         #set flow table and father node
-                        self.add_forwarding_rule(n.get_dp(),dst_mac,s_port)
+                        print("dp: %s, dst_mac: %s, s_port: %s"%(n.get_dp(),dst_mac,s_port))
+                        print("dst_mac type: %s\ns_port type: %s"%(type(dst_mac),type(s_port)))
+                        self.add_forwarding_rule(n.switch.dp,dst_mac,s_port)
                         n.setFather(device)
                     elif isinstance(device,TMSwitch):
                         ports = device.get_ports()
@@ -135,6 +141,7 @@ class ShortestPathSwitching(app_manager.RyuApp):
                             if d_port in n.pm_table:
                                 s_port = n.get_link_port(d_port.hw_addr)
                                 # set flow table and father node
+                                
                                 self.add_forwarding_rule(n.get_dp(),dst_mac,s_port)
                                 n.setFather(device)
                                 break
@@ -221,5 +228,6 @@ class ShortestPathSwitching(app_manager.RyuApp):
                 ofctl.send_arp(arp_opcode=arp.ARP_REPLY,vlan_id=VLANID_NONE,dst_mac=ask_mac,sender_mac=repl_mac,sender_ip=repl_ip,
                               target_mac=ask_mac, target_ip=ask_ip, src_port=ofctl.dp.ofproto.OFPP_CONTROLLER,output_port=in_port
                               )
+
                 print("send reply!")
 
