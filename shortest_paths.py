@@ -24,16 +24,32 @@ from ryu.lib.packet import ethernet, arp, icmp
 
 from ofctl_utils import OfCtl, VLANID_NONE
 
-from topo_manager_example import TopoManager
+from topo_manager_example import *
+import queue
 
+DEFAULT_COOKIE = 0
+DEFAULT_PRIORITY=0
 
 class ShortestPathSwitching(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_0.OFP_VERSION]
+
 
     def __init__(self, *args, **kwargs):
         super(ShortestPathSwitching, self).__init__(*args, **kwargs)
 
         self.tm = TopoManager()
+
+    def add_forwarding_rule(self, datapath, dl_dst, port):
+        ofctl = OfCtl.factory(datapath, self.logger)
+
+        actions = [datapath.ofproto_parser.OFPActionOutput(port)]
+        ofctl.set_flow(cookie=DEFAULT_COOKIE, priority=DEFAULT_PRIORITY,
+                                    dl_type=ether_types.ETH_TYPE_IP,
+                                    dl_vlan=VLANID_NONE,
+                                    dl_dst=dl_dst,
+                                    actions=actions)
+        print('forwarding_rule:\ndatapath: %s\ndl_dst: %s\nport: %s'%(datapath,dl_dst,port))
+        
 
     @set_ev_cls(event.EventSwitchEnter)
     def handle_switch_add(self, ev):
@@ -47,7 +63,14 @@ class ShortestPathSwitching(app_manager.RyuApp):
             self.logger.warn("\t%d:  %s", port.port_no, port.hw_addr)
 
         # TODO:  Update network topology and flow rules
-        self.tm.add_switch(switch)
+        sw_name = "switch_{}".format(switch.dp.id)
+        tm_switch = TMSwitch(sw_name,switch)
+        self.tm.add_switch(tm_switch)
+        # test
+        # self.add_forwarding_rule(switch.dp,'00:00:00:00:00:01',1)
+        # self.add_forwarding_rule(switch.dp,'00:00:00:00:00:02',2)
+        # ---------------------------------------------------------------------------
+
 
     @set_ev_cls(event.EventSwitchLeave)
     def handle_switch_delete(self, ev):
@@ -73,8 +96,53 @@ class ShortestPathSwitching(app_manager.RyuApp):
                           host.mac, host.ipv4,
                          host.port.dpid, host.port.port_no, host.port.hw_addr)
 
-        # TODO:  Update network topology and flow rules
-        self.tm.add_host(host)
+        # TODO:  Update network topology
+        tm_switch = self.tm.find_switch_by_id(host.port.dpid)
+        print(tm_switch)
+        h_name = "host_{}".format(host.mac)
+        tm_host = TMHost(h_name, host)
+        tm_host.add_neighbor(tm_switch)
+        tm_switch.add_neighbor(tm_host)
+        self.tm.add_host(tm_host)
+        tm_switch.set_pm_table(host.port.port_no, tm_host.get_mac())
+        print(tm_switch.pm_table)
+        #TODO: update flow rules
+        self.bfsUpdate(tm_host)
+
+    def bfsUpdate(self, host):
+        visited = []
+        q = queue.Queue()
+        q.put(host)
+        dst_mac = host.get_mac()
+        while(not q.empty()):
+            device = q.get()
+            q.qsize()
+            for n in device.get_neighbors():
+                if n in visited:
+                    break
+                visited.append(n)
+                q.put(n)
+                if isinstance(n,TMSwitch):
+                    if isinstance(device, TMHost):
+                        h_mac = device.get_mac()
+                        s_port = n.get_link_port(h_mac)
+                        #set flow table and father node
+                        self.add_forwarding_rule(n.get_dp(),dst_mac,s_port)
+                        n.setFather(device)
+                    elif isinstance(device,TMSwitch):
+                        ports = device.get_ports()
+                        for d_port in ports:
+                            if d_port in n.pm_table:
+                                s_port = n.get_link_port(d_port.hw_addr)
+                                # set flow table and father node
+                                self.add_forwarding_rule(n.get_dp(),dst_mac,s_port)
+                                n.setFather(device)
+                                break
+                elif isinstance(n,TMHost):
+                    # add father
+                    n.setFather(device)
+        
+
 
     @set_ev_cls(event.EventLinkAdd)
     def handle_link_add(self, ev):
@@ -144,7 +212,7 @@ class ShortestPathSwitching(app_manager.RyuApp):
                 self.logger.warning("Received ARP REQUEST on switch%d/%d:  Who has %s?  Tell %s",
                                     dp.id, in_port, arp_msg.dst_ip, arp_msg.src_mac)
 
-                # TODO:  Generate a *REPLY* for this request based on your switch state
+                # Generate a *REPLY* for this request based on your switch state
                 ask_ip = arp_msg.src_ip
                 ask_mac = arp_msg.src_mac
                 repl_ip = arp_msg.dst_ip
