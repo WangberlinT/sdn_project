@@ -35,8 +35,10 @@ class Device():
         self.father = father
 
     def __str__(self):
-        return "{}({})".format(self.__class__.__name__,
-                               self.name)
+        
+
+        return "{}({})\nneighbors:{}".format(self.__class__.__name__,
+                               self.name,self.get_neighbors())
 
 
 class TMSwitch(Device):
@@ -73,10 +75,13 @@ class TMSwitch(Device):
     def get_link_port(self, mac):
         return self.pm_table[mac]
 
+
     def __str__(self):
         return "switch:{},dpid:{},dp:{}".format(self.switch,self.get_dpid(),self.get_dp())
 
-    # TODO delete pm pair
+    def del_pm_link(self, mac): 
+         del self.pm_table[mac]
+
 
 
 class TMHost(Device):
@@ -151,6 +156,7 @@ class TopoManager():
         self.all_devices.remove(switch)
         print("remove:%s"%(switch))
         for device in self.all_devices:
-            device.remove_neighbor(switch)
+            if switch in device.get_neighbors():
+                device.remove_neighbor(switch)
             print("device: %s"%(device))
                 
