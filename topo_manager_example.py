@@ -27,6 +27,9 @@ class Device():
 
     def get_neighbors(self):
         return self.neighbors
+    
+    def remove_neighbor(self,device):
+        self.neighbors.remove(device)
 
     def setFather(self,father):
         self.father = father
@@ -128,9 +131,21 @@ class TopoManager():
             if isinstance(device,TMSwitch):
                  if port in device.get_ports():
                     return device
+    
+    def find_tmswitch_by_switch(self,switch):
+        for device in self.all_devices:
+            if isinstance(device,TMSwitch):
+                if device.switch == switch:
+                    return device
 
     def addARPTable(self,host):
         iplist = host.get_ips()
         macobj = host.get_mac()
         for i in range(0,len(iplist)):
             self.ARPTable[iplist[i]] = macobj
+
+    def deleteSwitch(self,switch):
+        self.all_devices.remove(switch)
+        for device in self.all_devices:
+            device.remove_neighbor(switch)
+                

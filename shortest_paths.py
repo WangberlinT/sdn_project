@@ -71,11 +71,12 @@ class ShortestPathSwitching(app_manager.RyuApp):
         # self.add_forwarding_rule(switch.dp,'00:00:00:00:00:02',2)
         print("shoudong: %s"%(switch.dp))
         # --------------------------------------------------------------------------- 
-        # for device in self.tm.all_devices:
-        #     if isinstance(device,TMHost):
-        #         self.bfsUpdate(device)
+        self.updateAll()
 
-
+    def updateAll(self):
+        for device in self.tm.all_devices:
+            if isinstance(device,TMHost):
+                self.bfsUpdate(device)
 
     @set_ev_cls(event.EventSwitchLeave)
     def handle_switch_delete(self, ev):
@@ -89,6 +90,9 @@ class ShortestPathSwitching(app_manager.RyuApp):
             self.logger.warn("\t%d:  %s", port.port_no, port.hw_addr)
 
         # TODO:  Update network topology and flow rules
+        tm_switch = self.tm.find_tmswitch_by_switch(switch)
+        self.tm.deleteSwitch(tm_switch)
+        self.updateAll()
 
     @set_ev_cls(event.EventHostAdd)
     def handle_host_add(self, ev):
@@ -164,6 +168,13 @@ class ShortestPathSwitching(app_manager.RyuApp):
                          dst_port.dpid, dst_port.port_no, dst_port.hw_addr)
 
         # TODO:  Update network topology and flow rules
+        tm_switch1 = self.tm.find_switch_by_port(src_port)
+        tm_switch2 = self.tm.find_switch_by_port(dst_port)
+
+        tm_switch1.add_neighbor(tm_switch2)
+        tm_switch2.add_neighbor(tm_switch1)
+        # tm_switch1.set_pm_table()
+
 
     @set_ev_cls(event.EventLinkDelete)
     def handle_link_delete(self, ev):
