@@ -20,11 +20,16 @@ class Device():
     def __init__(self, name):
         self.name = name
         self.neighbors = set()
+        self.father = None
 
     def add_neighbor(self, dev):
         self.neighbors.add(dev)
 
-    # . . .
+    def get_neighbors(self):
+        return self.neighbors
+
+    def setFather(self,father):
+        self.father = father
 
     def __str__(self):
         return "{}({})".format(self.__class__.__name__,
@@ -42,6 +47,8 @@ class TMSwitch(Device):
         super(TMSwitch, self).__init__(name)
 
         self.switch = switch
+        # pm_table : Port-Mac pair
+        self.pm_table = {}
         # TODO:  Add more attributes as necessary
 
     def get_dpid(self):
@@ -57,7 +64,13 @@ class TMSwitch(Device):
         """Return switch datapath object"""
         return self.switch.dp
 
-    # . . .
+    def set_pm_table(self, port, mac):
+        self.pm_table[mac] = port
+
+    def get_link_port(self, mac):
+        return self.pm_table[mac]
+
+    # TODO delete pm pair
 
 
 class TMHost(Device):
@@ -98,24 +111,23 @@ class TopoManager():
         self.ARPTable = {}; # store the ip address : Mac address pair
         pass
 
-    def add_switch(self, sw):
-        name = "switch_{}".format(sw.dp.id)
-        switch = TMSwitch(name, sw)
-
+    def add_switch(self, switch):
         self.all_devices.append(switch)
 
         # TODO:  Add switch to some data structure(s)
 
-    def add_host(self, h):
-        name = "host_{}".format(h.mac)
-        host = TMHost(name, h)
-
+    def add_host(self, host):
         self.all_devices.append(host)
         self.addARPTable(host)
         # TODO:  Add host to some data structure(s)
         # test
         # print('ARPTable: %s{}',self.ARPTable,format("(ip:%s,mac:%s) be added into arp table",host.get_ips(),host.get_mac()));
     # . . .
+    def find_switch_by_id(self,dpid):
+        for device in self.all_devices:
+            if isinstance(device,TMSwitch):
+                device.get_dpid() == dpid
+                return device
 
     def addARPTable(self,host):
         iplist = host.get_ips()
