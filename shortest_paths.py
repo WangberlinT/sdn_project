@@ -62,14 +62,13 @@ class ShortestPathSwitching(app_manager.RyuApp):
         for port in switch.ports:
             self.logger.warn("\t%d:  %s", port.port_no, port.hw_addr)
 
-        # TODO:  Update network topology and flow rules
+        # Update network topology and flow rules
         sw_name = "switch_{}".format(switch.dp.id)
         tm_switch = TMSwitch(sw_name,switch)
         self.tm.add_switch(tm_switch)
         # test
         # self.add_forwarding_rule(switch.dp,'00:00:00:00:00:01',1)
         # self.add_forwarding_rule(switch.dp,'00:00:00:00:00:02',2)
-        print("shoudong: %s"%(switch.dp))
         # --------------------------------------------------------------------------- 
         self.updateAll()
 
@@ -89,8 +88,12 @@ class ShortestPathSwitching(app_manager.RyuApp):
         for port in switch.ports:
             self.logger.warn("\t%d:  %s", port.port_no, port.hw_addr)
 
-        # TODO:  Update network topology and flow rules
-        tm_switch = self.tm.find_tmswitch_by_switch(switch)
+        print("switch: %s"%(switch))
+        for device in self.tm.all_devices:
+            print("device: %s"%(device))
+
+        # Update network topology and flow rules
+        tm_switch = self.tm.find_tmswitch_by_dpid(switch.dp.id)
         self.tm.deleteSwitch(tm_switch)
         self.updateAll()
 
@@ -105,16 +108,14 @@ class ShortestPathSwitching(app_manager.RyuApp):
                           host.mac, host.ipv4,
                          host.port.dpid, host.port.port_no, host.port.hw_addr)
 
-        # TODO:  Update network topology
+        # Update network topology
         tm_switch = self.tm.find_switch_by_port(host.port)
-        print(tm_switch)
         h_name = "host_{}".format(host.mac)
         tm_host = TMHost(h_name, host)
         tm_host.add_neighbor(tm_switch)
         tm_switch.add_neighbor(tm_host)
         self.tm.add_host(tm_host)
         tm_switch.set_pm_table(host.port.port_no, tm_host.get_mac())
-        print(tm_switch.pm_table)
         #TODO: update flow rules
         self.bfsUpdate(tm_host)
 
@@ -135,8 +136,6 @@ class ShortestPathSwitching(app_manager.RyuApp):
                         h_mac = device.get_mac()
                         s_port = n.get_link_port(h_mac)
                         #set flow table and father node
-                        print("dp: %s, dst_mac: %s, s_port: %s"%(n.get_dp(),dst_mac,s_port))
-                        print("dst_mac type: %s\ns_port type: %s"%(type(dst_mac),type(s_port)))
                         self.add_forwarding_rule(n.switch.dp,dst_mac,s_port)
                         n.setFather(device)
                     elif isinstance(device,TMSwitch):
@@ -167,14 +166,15 @@ class ShortestPathSwitching(app_manager.RyuApp):
                          src_port.dpid, src_port.port_no, src_port.hw_addr,
                          dst_port.dpid, dst_port.port_no, dst_port.hw_addr)
 
-        # TODO:  Update network topology and flow rules
+        # Update network topology and flow rules
         tm_switch1 = self.tm.find_switch_by_port(src_port)
         tm_switch2 = self.tm.find_switch_by_port(dst_port)
 
         tm_switch1.add_neighbor(tm_switch2)
         tm_switch2.add_neighbor(tm_switch1)
-        # tm_switch1.set_pm_table()
-
+        tm_switch1.set_pm_table(src_port.port_no,dst_port.hw_addr)
+        tm_switch2.set_pm_table(dst_port.port_no,src_port.hw_addr)
+        self.updateAll()
 
     @set_ev_cls(event.EventLinkDelete)
     def handle_link_delete(self, ev):
@@ -189,7 +189,7 @@ class ShortestPathSwitching(app_manager.RyuApp):
                           src_port.dpid, src_port.port_no, src_port.hw_addr,
                           dst_port.dpid, dst_port.port_no, dst_port.hw_addr)
 
-        # TODO:  Update network topology and flow rules
+        # Update network topology and flow rules
 
     @set_ev_cls(event.EventPortModify)
     def handle_port_modify(self, ev):
@@ -202,7 +202,7 @@ class ShortestPathSwitching(app_manager.RyuApp):
                          port.dpid, port.port_no, port.hw_addr,
                          "UP" if port.is_live() else "DOWN")
 
-        # TODO:  Update network topology and flow rules
+        # Update network topology and flow rules
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):

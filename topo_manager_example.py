@@ -73,6 +73,9 @@ class TMSwitch(Device):
     def get_link_port(self, mac):
         return self.pm_table[mac]
 
+    def __str__(self):
+        return "switch:{},dpid:{},dp:{}".format(self.switch,self.get_dpid(),self.get_dp())
+
     # TODO delete pm pair
 
 
@@ -132,10 +135,10 @@ class TopoManager():
                  if port in device.get_ports():
                     return device
     
-    def find_tmswitch_by_switch(self,switch):
+    def find_tmswitch_by_dpid(self,dpid):
         for device in self.all_devices:
             if isinstance(device,TMSwitch):
-                if device.switch == switch:
+                if device.get_dpid() == dpid:
                     return device
 
     def addARPTable(self,host):
@@ -146,6 +149,8 @@ class TopoManager():
 
     def deleteSwitch(self,switch):
         self.all_devices.remove(switch)
+        print("remove:%s"%(switch))
         for device in self.all_devices:
             device.remove_neighbor(switch)
+            print("device: %s"%(device))
                 
