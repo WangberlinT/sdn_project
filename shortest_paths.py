@@ -190,6 +190,17 @@ class ShortestPathSwitching(app_manager.RyuApp):
                           dst_port.dpid, dst_port.port_no, dst_port.hw_addr)
 
         # TODO:  Update network topology and flow rules
+        tm_switch_src = self.tm.find_switch_by_port(src_port)
+        tm_switch_dst = self.tm.find_switch_by_port(dst_port)
+
+        tm_switch_src.remove_neighbor(tm_switch_dst)
+        tm_switch_dst.remove_neighbor(tm_switch_src)
+
+        tm_switch_src.del_pm_link(src_port.hw_addr)
+        tm_switch_dst.del_pm_link(dst_port.hw_addr)
+        self.updateAll()
+
+
 
     @set_ev_cls(event.EventPortModify)
     def handle_port_modify(self, ev):
