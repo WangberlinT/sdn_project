@@ -73,8 +73,8 @@ class TMSwitch(Device):
     def get_link_port(self, mac):
         return self.pm_table[mac]
 
-    def del_pm_link(self, mac):
-        del self.pm_table[mac]
+    def del_pm_link(self, mac): 
+         del self.pm_table[mac]
 
 
 
