@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "C:\\Users\\Tchao\\.conda\\envs\\A4\\python.exe",
+    "python.pythonPath": "/usr/bin/python3",
     "files.autoSaveDelay": 10000,
     "files.autoSave": "onFocusChange",
     "editor.fontSize": 18

@@ -29,7 +29,8 @@ class Device():
         return self.neighbors
     
     def remove_neighbor(self,device):
-        self.neighbors.remove(device)
+        if device in self.neighbors:
+            self.neighbors.remove(device)
 
     def setFather(self,father):
         self.father = father
@@ -83,9 +84,8 @@ class TMSwitch(Device):
         return "switch{}".format(self.get_dpid())
 
     def del_pm_link(self, mac): 
-         del self.pm_table[mac]
-
-
+        if mac in self.pm_table.keys():
+            del self.pm_table[mac]
 
 class TMHost(Device):
     """Representation of a host, extends Device

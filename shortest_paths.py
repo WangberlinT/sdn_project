@@ -51,20 +51,6 @@ class ShortestPathSwitching(app_manager.RyuApp):
         print('forwarding_rule:\nswitch:%s\ndl_dst: %s\nport: %s' %
               (datapath.id, dl_dst, port))
 
-
-    def add_forwarding_rule_ip(self,datapath,ip_dst,port):
-        ofctl = OfCtl.factory(datapath, self.logger)
-
-        actions = [datapath.ofproto_parser.OFPActionOutput(port)]
-        ofctl.set_flow(cookie=DEFAULT_COOKIE, priority=DEFAULT_PRIORITY,
-                       dl_type=ether_types.ETH_TYPE_IP,
-                       dl_vlan=VLANID_NONE,
-                       dl_dst=dl_dst,
-                       actions=actions)
-        print('forwarding_rule:\nswitch:%s\nip_dst: %s\nport: %s' %
-              (datapath.id, ip_dst, port))
-
-
     @set_ev_cls(event.EventSwitchEnter)
     def handle_switch_add(self, ev):
         """
@@ -194,6 +180,8 @@ class ShortestPathSwitching(app_manager.RyuApp):
             print("|%s| is adjacent with: "% device, end = '')
             for adj_dev in device.get_neighbors():
                 print("|%s|" % adj_dev, end = '  ')
+            print()
+        print()
 
     # show the path to the device(each update will generate a path from start device to every other devices)
     def show_path(self, from_device, to_device):
