@@ -38,10 +38,8 @@ class Device():
         self.father = None
 
     def __str__(self):
-        
-
         return "{}({})\nneighbors:{}".format(self.__class__.__name__,
-                               self.name,self.get_neighbors())
+                               self.name, self.get_neighbors())
 
 
 class TMSwitch(Device):
@@ -77,7 +75,9 @@ class TMSwitch(Device):
 
     def get_link_port(self, mac):
         return self.pm_table[mac]
-
+        
+    def topo_str(self):
+        return super(TMSwitch, self).__str__(self)
 
     def __str__(self):
         return "switch{}".format(self.get_dpid())
@@ -109,6 +109,9 @@ class TMHost(Device):
     def get_port(self):
         """Return Ryu port object for this host"""
         return self.host.port
+    
+    def topo_str(self):
+        return super(TMHost, self).__str__(self)
 
     def __str__(self):
         return "Host "+self.get_ips()[0]

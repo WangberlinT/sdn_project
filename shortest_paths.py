@@ -51,6 +51,7 @@ class ShortestPathSwitching(app_manager.RyuApp):
         print('forwarding_rule:\nswitch:%s\ndl_dst: %s\nport: %s' %
               (datapath.id, dl_dst, port))
 
+
     def add_forwarding_rule_ip(self,datapath,ip_dst,port):
         ofctl = OfCtl.factory(datapath, self.logger)
 
@@ -62,6 +63,7 @@ class ShortestPathSwitching(app_manager.RyuApp):
                        actions=actions)
         print('forwarding_rule:\nswitch:%s\nip_dst: %s\nport: %s' %
               (datapath.id, ip_dst, port))
+
 
     @set_ev_cls(event.EventSwitchEnter)
     def handle_switch_add(self, ev):
@@ -184,6 +186,14 @@ class ShortestPathSwitching(app_manager.RyuApp):
                     n.setFather(device)  # add Father
                     # show the path from init host to this host
                     self.show_path(host, n)
+                    self.show_adjacent_table()
+
+    def show_adjacent_table(self):
+        print("------------adjacent table-------------------")
+        for device in self.tm.all_devices:
+            print("|%s| is adjacent with: "% device, end = '')
+            for adj_dev in device.get_neighbors():
+                print("|%s|" % adj_dev, end = '  ')
 
     # show the path to the device(each update will generate a path from start device to every other devices)
     def show_path(self, from_device, to_device):
@@ -306,7 +316,8 @@ class ShortestPathSwitching(app_manager.RyuApp):
 
                 self.logger.warning("Received ARP REQUEST on switch%d/%d:  Who has %s?  Tell %s",
                                     dp.id, in_port, arp_msg.dst_ip, arp_msg.src_mac)
-
+                #TODO: Implement broadcast-storm preventing method
+                
                 # Generate a *REPLY* for this request based on your switch state
                 ask_ip = arp_msg.src_ip
                 ask_mac = arp_msg.src_mac
