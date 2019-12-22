@@ -34,6 +34,9 @@ class Device():
     def setFather(self,father):
         self.father = father
 
+    def cleanFather(self):
+        self.father = None
+
     def __str__(self):
         
 
@@ -77,7 +80,7 @@ class TMSwitch(Device):
 
 
     def __str__(self):
-        return "switch:{},dpid:{},dp:{}".format(self.switch,self.get_dpid(),self.get_dp())
+        return "switch{}".format(self.get_dpid())
 
     def del_pm_link(self, mac): 
          del self.pm_table[mac]
@@ -96,7 +99,6 @@ class TMHost(Device):
         super(TMHost, self).__init__(host)
 
         self.host = host
-        # TODO:  Add more attributes as necessary
 
     def get_mac(self):
         return self.host.mac
@@ -108,7 +110,8 @@ class TMHost(Device):
         """Return Ryu port object for this host"""
         return self.host.port
 
-    # . . .
+    def __str__(self):
+        return "Host "+self.get_ips()[0]
 
 
 class TopoManager():
@@ -120,20 +123,14 @@ class TopoManager():
         # TODO:  Initialize some data structures
         self.all_devices = []
         self.ARPTable = {}; # store the ip address : Mac address pair
-        pass
 
     def add_switch(self, switch):
         self.all_devices.append(switch)
 
-        # TODO:  Add switch to some data structure(s)
-
     def add_host(self, host):
         self.all_devices.append(host)
         self.addARPTable(host)
-        # TODO:  Add host to some data structure(s)
-        # test
-        # print('ARPTable: %s{}',self.ARPTable,format("(ip:%s,mac:%s) be added into arp table",host.get_ips(),host.get_mac()));
-    # . . .
+
     def find_switch_by_port(self,port):
         for device in self.all_devices:
             if isinstance(device,TMSwitch):

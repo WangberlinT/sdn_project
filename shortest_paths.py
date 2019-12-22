@@ -121,7 +121,7 @@ class ShortestPathSwitching(app_manager.RyuApp):
     def bfsUpdate(self, host):
         # ouput host
         print("-------BFS Update-------")
-        print(host)
+        host.cleanFather()
         visited = []
         q = queue.Queue()
         q.put(host)
@@ -129,17 +129,17 @@ class ShortestPathSwitching(app_manager.RyuApp):
         dst_mac = host.get_mac()# every switch on the way will set it as dst
 
         while(not q.empty()):
-            print("queue size: %d"%q.qsize())
+            # print("queue size: %d"%q.qsize())
             device = q.get()
-            print("dequeue: %s" % device)
+            # print("dequeue: %s" % device)
             
             for n in device.get_neighbors():
-                print("neighbors num: %d"%len(device.get_neighbors()))
+                # print("neighbors num: %d"%len(device.get_neighbors()))
                 if n in visited:
                     continue
                 visited.append(n)
                 q.put(n)
-                print("%s enqueue"%n)
+                # print("%s enqueue"%n)
                 if isinstance(n, TMSwitch):
                     if isinstance(device, TMHost):
                         h_mac = device.get_mac()
@@ -154,14 +154,43 @@ class ShortestPathSwitching(app_manager.RyuApp):
                             if d_port.hw_addr in n.pm_table.keys():
                                 s_port = n.get_link_port(d_port.hw_addr)
                                 # set flow table and father node
-                                print("\n-------------------set switch flow table---------------------\n")
+                                # print("\n-------------------set switch flow table---------------------\n")
                                 self.add_forwarding_rule(
                                     n.get_dp(), dst_mac, s_port)
                                 n.setFather(device)
                                 break
                 elif isinstance(n, TMHost):
-                    # add father
-                    n.setFather(device)
+                    n.setFather(device)# add Father
+                    self.show_path(host,n)# show the path from init host to this host
+        
+        
+    # show the path to the device(each update will generate a path from start device to every other devices)
+    def show_path(self,from_device,to_device):
+        stack = queue.LifoQueue()
+        mark = {} # mark which device has enter
+        stack.put(to_device)
+        print("-----The shortest path from %s to %s is-----"%(from_device,to_device))
+        while not stack.empty():
+            head_device = stack.get()
+            if head_device.father != None:
+                if head_device in mark.keys():
+                    if not stack.empty():
+                        print("|%s|->"%head_device,end=' ')
+                    else:
+                        print("|%s|"%head_device)# the last one
+                        print("--------------------------------------------------")
+                else:
+                    father_device = head_device.father
+                    stack.put(head_device)
+                    stack.put(father_device)
+                mark[head_device] = True
+            else:
+                print("|%s|->"%head_device,end=' ')
+            
+
+
+
+            
 
     @set_ev_cls(event.EventLinkAdd)
     def handle_link_add(self, ev):
@@ -178,19 +207,19 @@ class ShortestPathSwitching(app_manager.RyuApp):
         # Update network topology and flow rules
         tm_switch1 = self.tm.find_switch_by_port(src_port)
         tm_switch2 = self.tm.find_switch_by_port(dst_port)
-        print("+++++++++Switch Link++++++++++")
-        print("switch1:%s\nswitch2:%s"%(tm_switch1,tm_switch2))
+        # print("+++++++++Switch Link++++++++++")
+        # print("switch1:%s\nswitch2:%s"%(tm_switch1,tm_switch2))
 
         tm_switch1.add_neighbor(tm_switch2)
         tm_switch2.add_neighbor(tm_switch1)
         tm_switch1.set_pm_table(src_port.port_no, dst_port.hw_addr)
         tm_switch2.set_pm_table(dst_port.port_no, src_port.hw_addr)
 
-        print("------------------Show PM Table------------------")
-        print("switch%s neighbor: %s"%(tm_switch1.get_dpid(),tm_switch1.get_neighbors()))
-        print("switch%s pm_table: %s"%(tm_switch1.get_dpid(),tm_switch1.pm_table))
-        print("switch%s neighbor: %s"%(tm_switch2.get_dpid(),tm_switch2.get_neighbors()))
-        print("switch%s pm_table: %s"%(tm_switch2.get_dpid(),tm_switch2.pm_table))
+        # print("------------------Show PM Table------------------")
+        # print("switch%s neighbor: %s"%(tm_switch1.get_dpid(),tm_switch1.get_neighbors()))
+        # print("switch%s pm_table: %s"%(tm_switch1.get_dpid(),tm_switch1.pm_table))
+        # print("switch%s neighbor: %s"%(tm_switch2.get_dpid(),tm_switch2.get_neighbors()))
+        # print("switch%s pm_table: %s"%(tm_switch2.get_dpid(),tm_switch2.pm_table))
         self.updateAll()
 
     @set_ev_cls(event.EventLinkDelete)
