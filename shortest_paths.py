@@ -48,7 +48,8 @@ class ShortestPathSwitching(app_manager.RyuApp):
                        dl_vlan=VLANID_NONE,
                        dl_dst=dl_dst,
                        actions=actions)
-        print('forwarding_rule:\nswitch:%s\ndl_dst: %s\nport: %s' % (datapath.id,dl_dst, port))
+        print('forwarding_rule:\nswitch:%s\ndl_dst: %s\nport: %s' %
+              (datapath.id, dl_dst, port))
 
     @set_ev_cls(event.EventSwitchEnter)
     def handle_switch_add(self, ev):
@@ -126,13 +127,13 @@ class ShortestPathSwitching(app_manager.RyuApp):
         q = queue.Queue()
         q.put(host)
         visited.append(host)
-        dst_mac = host.get_mac()# every switch on the way will set it as dst
+        dst_mac = host.get_mac()  # every switch on the way will set it as dst
 
         while(not q.empty()):
             # print("queue size: %d"%q.qsize())
             device = q.get()
             # print("dequeue: %s" % device)
-            
+
             for n in device.get_neighbors():
                 # print("neighbors num: %d"%len(device.get_neighbors()))
                 if n in visited:
@@ -160,24 +161,25 @@ class ShortestPathSwitching(app_manager.RyuApp):
                                 n.setFather(device)
                                 break
                 elif isinstance(n, TMHost):
-                    n.setFather(device)# add Father
-                    self.show_path(host,n)# show the path from init host to this host
-        
-        
+                    n.setFather(device)  # add Father
+                    # show the path from init host to this host
+                    self.show_path(host, n)
+
     # show the path to the device(each update will generate a path from start device to every other devices)
-    def show_path(self,from_device,to_device):
+    def show_path(self, from_device, to_device):
         stack = queue.LifoQueue()
-        mark = {} # mark which device has enter
+        mark = {}  # mark which device has enter
         stack.put(to_device)
-        print("-----The shortest path from %s to %s is-----"%(from_device,to_device))
+        print("-----The shortest path from %s to %s is-----" %
+              (from_device, to_device))
         while not stack.empty():
             head_device = stack.get()
             if head_device.father != None:
                 if head_device in mark.keys():
                     if not stack.empty():
-                        print("|%s|->"%head_device,end=' ')
+                        print("|%s|->" % head_device, end=' ')
                     else:
-                        print("|%s|"%head_device)# the last one
+                        print("|%s|" % head_device)  # the last one
                         print("--------------------------------------------------")
                 else:
                     father_device = head_device.father
@@ -185,12 +187,9 @@ class ShortestPathSwitching(app_manager.RyuApp):
                     stack.put(father_device)
                 mark[head_device] = True
             else:
-                print("|%s|->"%head_device,end=' ')
-            
+                print("|%s|->" % head_device, end=' ')
 
 
-
-            
 
     @set_ev_cls(event.EventLinkAdd)
     def handle_link_add(self, ev):
@@ -287,7 +286,8 @@ class ShortestPathSwitching(app_manager.RyuApp):
 
                 self.logger.warning("Received ARP REQUEST on switch%d/%d:  Who has %s?  Tell %s",
                                     dp.id, in_port, arp_msg.dst_ip, arp_msg.src_mac)
-
+                #TODO: Implement broadcast-storm preventing method
+                
                 # Generate a *REPLY* for this request based on your switch state
                 ask_ip = arp_msg.src_ip
                 ask_mac = arp_msg.src_mac
