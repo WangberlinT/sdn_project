@@ -164,6 +164,14 @@ class ShortestPathSwitching(app_manager.RyuApp):
                     n.setFather(device)  # add Father
                     # show the path from init host to this host
                     self.show_path(host, n)
+                    self.show_adjacent_table()
+
+    def show_adjacent_table(self):
+        print("------------adjacent table-------------------")
+        for device in self.tm.all_devices:
+            print("|%s| is adjacent with: "% device, end = '')
+            for adj_dev in device.get_neighbors():
+                print("|%s|" % adj_dev, end = '  ')
 
     # show the path to the device(each update will generate a path from start device to every other devices)
     def show_path(self, from_device, to_device):
