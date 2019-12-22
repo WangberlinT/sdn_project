@@ -143,6 +143,12 @@ class TopoManager():
                 if device.get_dpid() == dpid:
                     return device
 
+    def find_host_by_mac(self,mac):
+        for device in self.all_devices:
+            if isinstance(device,TMHost):
+                if device.get_mac == mac:
+                    return device
+
     def addARPTable(self,host):
         iplist = host.get_ips()
         macobj = host.get_mac()

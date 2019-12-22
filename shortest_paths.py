@@ -48,7 +48,20 @@ class ShortestPathSwitching(app_manager.RyuApp):
                        dl_vlan=VLANID_NONE,
                        dl_dst=dl_dst,
                        actions=actions)
-        print('forwarding_rule:\nswitch:%s\ndl_dst: %s\nport: %s' % (datapath.id,dl_dst, port))
+        print('forwarding_rule:\nswitch:%s\ndl_dst: %s\nport: %s' %
+              (datapath.id, dl_dst, port))
+
+    def add_forwarding_rule_ip(self,datapath,ip_dst,port):
+        ofctl = OfCtl.factory(datapath, self.logger)
+
+        actions = [datapath.ofproto_parser.OFPActionOutput(port)]
+        ofctl.set_flow(cookie=DEFAULT_COOKIE, priority=DEFAULT_PRIORITY,
+                       dl_type=ether_types.ETH_TYPE_IP,
+                       dl_vlan=VLANID_NONE,
+                       dl_dst=dl_dst,
+                       actions=actions)
+        print('forwarding_rule:\nswitch:%s\nip_dst: %s\nport: %s' %
+              (datapath.id, ip_dst, port))
 
     @set_ev_cls(event.EventSwitchEnter)
     def handle_switch_add(self, ev):
@@ -118,6 +131,14 @@ class ShortestPathSwitching(app_manager.RyuApp):
         # TODO: update flow rules
         self.updateAll()
 
+    def bfsGenerateTree(host):
+        print("-------Broadcast update-------")
+        visited = []
+        q = queue.Queue()
+        q.put(host)
+        visited.append(host)
+        dst_ip = '0.0.0.0'
+
     def bfsUpdate(self, host):
         # ouput host
         print("-------BFS Update-------")
@@ -126,13 +147,13 @@ class ShortestPathSwitching(app_manager.RyuApp):
         q = queue.Queue()
         q.put(host)
         visited.append(host)
-        dst_mac = host.get_mac()# every switch on the way will set it as dst
+        dst_mac = host.get_mac()  # every switch on the way will set it as dst
 
         while(not q.empty()):
             # print("queue size: %d"%q.qsize())
             device = q.get()
             # print("dequeue: %s" % device)
-            
+
             for n in device.get_neighbors():
                 # print("neighbors num: %d"%len(device.get_neighbors()))
                 if n in visited:
@@ -160,24 +181,25 @@ class ShortestPathSwitching(app_manager.RyuApp):
                                 n.setFather(device)
                                 break
                 elif isinstance(n, TMHost):
-                    n.setFather(device)# add Father
-                    self.show_path(host,n)# show the path from init host to this host
-        
-        
+                    n.setFather(device)  # add Father
+                    # show the path from init host to this host
+                    self.show_path(host, n)
+
     # show the path to the device(each update will generate a path from start device to every other devices)
-    def show_path(self,from_device,to_device):
+    def show_path(self, from_device, to_device):
         stack = queue.LifoQueue()
-        mark = {} # mark which device has enter
+        mark = {}  # mark which device has enter
         stack.put(to_device)
-        print("-----The shortest path from %s to %s is-----"%(from_device,to_device))
+        print("-----The shortest path from %s to %s is-----" %
+              (from_device, to_device))
         while not stack.empty():
             head_device = stack.get()
             if head_device.father != None:
                 if head_device in mark.keys():
                     if not stack.empty():
-                        print("|%s|->"%head_device,end=' ')
+                        print("|%s|->" % head_device, end=' ')
                     else:
-                        print("|%s|"%head_device)# the last one
+                        print("|%s|" % head_device)  # the last one
                         print("--------------------------------------------------")
                 else:
                     father_device = head_device.father
@@ -185,12 +207,7 @@ class ShortestPathSwitching(app_manager.RyuApp):
                     stack.put(father_device)
                 mark[head_device] = True
             else:
-                print("|%s|->"%head_device,end=' ')
-            
-
-
-
-            
+                print("|%s|->" % head_device, end=' ')
 
     @set_ev_cls(event.EventLinkAdd)
     def handle_link_add(self, ev):
@@ -279,6 +296,8 @@ class ShortestPathSwitching(app_manager.RyuApp):
         eth = pkt.get_protocols(ethernet.ethernet)[
             0]  # get link layer protocal
 
+        
+
         if eth.ethertype == ether_types.ETH_TYPE_ARP:
             # resolve package as arp msg
             arp_msg = pkt.get_protocols(arp.arp)[0]
@@ -292,10 +311,16 @@ class ShortestPathSwitching(app_manager.RyuApp):
                 ask_ip = arp_msg.src_ip
                 ask_mac = arp_msg.src_mac
                 repl_ip = arp_msg.dst_ip
-                repl_mac = self. tm.ARPTable[repl_ip]
-                # Here is an example way to send an ARP packet using the ofctl utilities
-                ofctl.send_arp(arp_opcode=arp.ARP_REPLY, vlan_id=VLANID_NONE, dst_mac=ask_mac, sender_mac=repl_mac, sender_ip=repl_ip,
-                               target_mac=ask_mac, target_ip=ask_ip, src_port=ofctl.dp.ofproto.OFPP_CONTROLLER, output_port=in_port
-                               )
+                if repl_ip in self.tm.ARPTable.keys():
+                    repl_mac = self. tm.ARPTable[repl_ip]
+                    # Here is an example way to send an ARP packet using the ofctl utilities
+                    ofctl.send_arp(arp_opcode=arp.ARP_REPLY, vlan_id=VLANID_NONE, dst_mac=ask_mac, sender_mac=repl_mac, sender_ip=repl_ip,
+                                   target_mac=ask_mac, target_ip=ask_ip, src_port=ofctl.dp.ofproto.OFPP_CONTROLLER, output_port=in_port
+                                   )
+                else:
+                    # boardcast method
+                    host_src = self.tm.find_host_by_maco(
+                        ask_mac)  # search host by mac
+                    self.bfsGenerateTree(host_src)
 
                 print("send reply!")
