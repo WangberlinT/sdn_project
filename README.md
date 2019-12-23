@@ -8,5 +8,5 @@ See :[Project Details](./project_requirement/proj_sdn.pdf)
 
 ### Environment
 
-The environment establish requires a Virtual Machine. Vagrant on Ubuntu 16.04 is recommend. For details about environment establish, see: [Tutorial Establish](./project_requirement/SDN project-Tutorial on Environment Set-Up.pdf)
+The environment establish requires a Virtual Machine. Vagrant on Ubuntu 16.04 is recommend. For details about environment establish, see: [Tutorial Establish](./project_requirement/SDN_project-Tutorial_on_Environment_Set-Up.pdf)
 
