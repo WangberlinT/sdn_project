@@ -8,7 +8,7 @@ See :[Project Details](./project_requirement/proj_sdn.pdf)
 
 ### Environment
 
-The environment establish requires a Virtual Machine. Vagrant on Ubuntu 16.04 is recommend. For details about environment establish, see: [Tutorial Establish](./project_requirement/SDN_project-Tutorial_on_Environment_Set-Up.pdf)
+The environment establishment requires a Virtual Machine. Vagrant on Ubuntu 16.04 is recommend. For details about environment establish, see: [Tutorial Establishment](./project_requirement/SDN_project-Tutorial_on_Environment_Set-Up.pdf)
 
 ### Usage
 
@@ -24,7 +24,7 @@ to initiate Ryu, then use
 python run_mininet.py assign1
 ```
 
-to run `assign1` network. Some template networks are already provided in `run_mininet.py`.
+to run `assign1` network. Some template networks are already provided in [run_mininet.py](https://github.com/WangberlinT/sdn_project/blob/975f289fbb55e5ff2377b7a96c55d905683cfacf/run_mininet.py#L112).
 
 Assign1:
 
